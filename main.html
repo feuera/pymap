@@ -3,14 +3,14 @@
 <html>
 	<head>
 		<link rel="stylesheet" href="dist/leaflet.css" />
-		<!--[if lte IE 8]>
-			<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5/leaflet.ie.css" />
-		<![endif]-->
+		<script src="dist/leaflet.js"></script>
+		<script language="javascript" type="text/javascript" src="flot/jquery.js"></script>
+		<script language="javascript" type="text/javascript" src="flot/jquery.flot.js"></script>
 	</head>
 	<body>
 		<div id="map" style="width: 700px; height: 500px"></div>
-		<h2><a href="#" onclick="printer.text('Message from QWebView')">QObject Test</a></h2>
-		<script src="dist/leaflet.js"></script>
+		<h4><a href="#" onclick="printer.text('Message from QWebView')">QObject Test</a></h4>
+		<div style="width: 700px; height: 300px" id="plot"></div>
 		<script>
 			var map = L.map('map').setView([47.15, 15.37],10);
 			// add an OpenStreetMap tile layer
@@ -28,6 +28,9 @@
 			function setLine(poly) {
 				polyline.setLatLngs(poly);
 				map.fitBounds(polyline.getBounds());
+			}
+			function showPlot(data) {
+				$.plot($("#plot"), data);//, { yaxis: { max: 1 } });
 			}
 
 		</script>

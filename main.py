@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-import sys
+import sys,os
 from PyQt4.QtCore import QObject,pyqtSlot,QUrl,QDir
 from PyQt4.QtGui import QMainWindow,QApplication,QFileSystemModel
 from PyQt4.QtWebKit import *
 from PyQt4 import uic
+
+from fitparse import Activity
 
 class ConsolePrinter(QObject):
     def __init__(self, parent=None):
@@ -45,7 +47,24 @@ class MainWindow(QMainWindow):
         #self.printer.text("hi")
 
     def fileSelected(self,index):
-        print('click',index.data(),self.fileModel.fileName(index),self.fileModel.size(index),self.fileModel.type(index))
+        fitFile = self.fileModel.filePath(index)
+        print('click',index.data(),self.fileModel.filePath(index),type(self.fileModel.type(index)))
+        if self.fileModel.type(index) != "fit File":
+            return
+        a = Activity(fitFile)
+        a.parse()
+        hrv = filter(lambda x: x.type.num==78, a.records)
+        dat = filter(lambda x: x.type.num==20, a.records)
+        dlatlo = [[float(u.fields[1].data)/(1<<31)*180,float(u.fields[2].data)/(1<<31)*180] for u in dat if u.fields[1].data]
+        dat = filter(lambda x: x.type.num==20, a.records)
+        #timestamp = [u.fields[0].data for u in dat if u.fields[0].data]
+        hr = [[i,u.fields[6].data] for i,u in enumerate(dat) if u.fields[6].data]
+        dat = filter(lambda x: x.type.num==20, a.records)
+        alt = [[i,u.fields[4].data] for i,u in enumerate(dat) if u.fields[4].data]
+        self.frame.evaluateJavaScript("setLine(%s)"%(dlatlo))
+        #self.frame.evaluateJavaScript("showPlot([[[1,2],[2,3],[4,3]]])")
+        self.frame.evaluateJavaScript('showPlot([{data: %s,label:"Heartrate"},{data:%s, label:"altitude", yaxis: 2}]);'%(hr,alt))
+        print('finish')
 
 
 if __name__ == '__main__':
