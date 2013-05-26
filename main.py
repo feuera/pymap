@@ -3,7 +3,7 @@
 import sys,os
 
 from PyQt4.QtCore import QObject,pyqtSlot,QUrl,QDir,pyqtSignal
-from PyQt4.QtGui import QMainWindow,QApplication,QFileSystemModel,QAbstractItemView,QSizePolicy
+from PyQt4.QtGui import QMainWindow,QApplication,QFileSystemModel,QAbstractItemView,QSizePolicy,QColor
 from PyQt4.QtWebKit import *
 from PyQt4 import uic
 
@@ -118,13 +118,14 @@ class MyMplCanvas(FigureCanvas):
 
     def onmove(self, event):
         if event.inaxes and len(self.dFrame):
-            print('mouse move', event.xdata, event.ydata)
+            #print('mouse move', event.xdata, event.ydata)
             i=event.xdata
             if i > 70000:
                 i = self.dFrame.index.searchsorted(num2date(i))
             (lat,long)=self.dFrame.values[i][:2]
             self.mouseOver.emit(lat,long)
-            #self.hrLinev.set_xdata(event.xdata)
+            self.hrLinev.set_xdata(event.xdata)
+            self.draw_idle()
             #self.draw()
 
     def compute_initial_figure(self):
@@ -133,16 +134,17 @@ class MyMplCanvas(FigureCanvas):
 
     def plotDataFrame(self,frame):
         labelRot = "vertical"
+        frame = frame.resample('20s')
         self.dFrame = frame
         #self.hrAxes.plot(frame.HeartRate,'r',label='HeartRate')
         self.hrAxes.plot(frame.index,frame.HeartRate,'r',label='HeartRate')
         self.altAxes.plot(frame.index,frame.AltitudeMeters,label='Altitude')
         self.cadAxes.plot(frame.index,frame.Cadence,'g',label='Cadence')
 
-        val = frame.index.values[10]
-        x = date2num((datetime.fromtimestamp(val.astype('O')/1e9)))
+        #val = frame.index.values[0]
+        #x = date2num((datetime.fromtimestamp(val.astype('O')/1e9)))
         #print x
-        self.hrLinev = self.hrAxes.axvline(x=x)#, visible=False)
+        self.hrLinev = self.hrAxes.axvline(x=self.hrAxes.get_xbound()[0])#, visible=False)
 
         #self.hrAxes.set_xticklabels(self.hrAxes.get_xticks(),rotation=labelRot)
         #self.altAxes.set_xticklabels(self.altAxes.get_xticks(),rotation=labelRot)
@@ -177,7 +179,7 @@ class MainWindow(QMainWindow):
         self.ui.treeView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         self.ui.mdiArea.addSubWindow(self.ui.subwindowMap)
-        self.ui.mdiArea.addSubWindow(self.ui.subwindowGraphs)
+        #self.ui.mdiArea.addSubWindow(self.ui.subwindowGraphs)
         self.ui.mdiArea.tileSubWindows()
         #self.ui.mdiArea.cascadeSubWindows()
         #print self.ui.mdiArea.subWindowList(), self.ui.subwindowMap
@@ -186,9 +188,9 @@ class MainWindow(QMainWindow):
         self.ui.treeView.clicked.connect(self.fileSelected)
         #self.ui.treeView.activated.connect(self.fileSelected)
 
-        self.mplWidget = MyMplCanvas(self.ui.subwindowGraphs)
-        self.ui.subwindowGraphs.layout().addWidget(self.mplWidget)
-        self.mplWidget.mouseOver.connect(self.onMouseOver)
+        #self.mplWidget = MyMplCanvas(self.ui.subwindowGraphs)
+        #self.ui.subwindowGraphs.layout().addWidget(self.mplWidget)
+        #self.mplWidget.mouseOver.connect(self.onMouseOver)
 
         self.hr = []
         self.ui.show()
@@ -220,12 +222,23 @@ class MainWindow(QMainWindow):
         #print (self.frame)
         #self.frame.evaluateJavaScript("alert('Hello');")
         self.frame.addToJavaScriptWindowObject('printer', self.printer)
-        #self.printer.text("hi")
+        self.frame.addToJavaScriptWindowObject('gui', self)
+        self.printer.text("hi")
         self.frame.evaluateJavaScript("setLine(%s)"%('[[[45.25,15.33],[44.10,14.4]]]'))
 
     def onMouseOver(self, lat, long):
-        print(lat,long)
+        #print(lat,long)
         self.frame.evaluateJavaScript('moveMarker([%f,%f]);'%(lat,long))
+
+    @pyqtSlot(str)
+    def onGraphHover(self, strTSt):
+        timestmp = int(float(str(strTSt)))
+        #print('graphHover',timestmp)
+        st = self.dFrame.index.astype(int)[0]
+        i = self.dFrame.index.astype(int).searchsorted(st + timestmp*1000000)
+        (lat,long)=self.dFrame.values[i][:2]
+        self.onMouseOver(lat,long)
+
 
     def fileSelected(self,index):
         fitFile = self.fileModel.filePath(index)
@@ -251,7 +264,9 @@ class MainWindow(QMainWindow):
         #if self.fileModel.type(index) == "tcx File":
         self.hr = []
         self.frame.evaluateJavaScript('clearMap();')
-        cols = ['black','yellow','blue','red']
+        cols = ['darkred','green','red','green','black','yellow','blue','red']
+        colsH = ['darkred','green','red','green','black','yellow','blue','red']
+        #cols = [str(x) for x in QColor.colorNames()]
         for fitFile in fitfiles:
             fitFile = str(fitFile)
             print(fitFile)
@@ -261,12 +276,16 @@ class MainWindow(QMainWindow):
                 self.hdKeys = self.hdStore.keys()
             else:
                 print('already there')
-            dframe = self.hdStore.get(hdKey)
-            self.mplWidget.plotDataFrame(dframe)
-            dlatlo = [[dat[0], dat[1]] for dat in dframe.values if dat[0] != 0]
+            self.dFrame = self.hdStore.get(hdKey)
+            #self.mplWidget.plotDataFrame(self.dFrame)
+            dlatlo = [[dat[0], dat[1]] for dat in self.dFrame.values if dat[0] != 0]
             self.frame.evaluateJavaScript('setLine(%s,"%s");'%(dlatlo,cols.pop()))
-            self.hr.append([[i,dat[4]] for i,dat in enumerate(dframe.values)])
-        strS = ', '.join(['{data: %s, label:"HR%d"}'%(hrI,i) for i,hrI in enumerate(self.hr)])
+            self.dFrame['timeInt'] = self.dFrame.index.astype(int)/1000000 - self.dFrame.index.astype(int)[0]/1000000
+            self.hr.append([[dat[-1],dat[4]] for dat in self.dFrame.values])
+            print(self.hr[0][:10])
+        strS = ', '.join(['{data: %s, label:"HR%d", color:"%s"}'%(hrI,i,colsH[-(i+1)]) for i,hrI in enumerate(self.hr)])
+        ''' { xaxis: { mode: "time", timeformat: "%H:%M:%S" }, grid: { hoverable: true } }
+        '''
         self.frame.evaluateJavaScript('showPlot([%s]);'%(strS))
         #self.frame.evaluateJavaScript('showPlot([{data: %s,label:"Heartrate"},{data:%s, label:"altitude", yaxis: 2}]);'%(hr,alt))
 
