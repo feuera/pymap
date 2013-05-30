@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
-import sys,os
-
+import sys
 from PyQt4.QtCore import QObject,pyqtSlot,QUrl,QDir,pyqtSignal
-from PyQt4.QtGui import QMainWindow,QApplication,QFileSystemModel,QAbstractItemView,QSizePolicy,QColor
-from PyQt4.QtWebKit import *
+from PyQt4.QtGui import QMainWindow,QApplication,QFileSystemModel,QAbstractItemView,QSizePolicy#,QColor
+#from PyQt4.QtWebKit import *
 from PyQt4 import uic
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from matplotlib.dates import num2date,date2num
+from matplotlib.dates import num2date#,date2num
 
 import time
 from fitparse import Activity
@@ -37,21 +36,6 @@ def handle_tcxFile(f):
     fd['distMeter'] = getValue('DistanceMeters',dom)
     fd['maxS'] = getValue('MaximumSpeed',dom)
     'create new training...'
-    #t = Training(date=startDate, lat=0, lon=0,distance=distMeter,maxSpeed=maxS)
-    #t.save()
-    #for i,trackP in enumerate(allTrackPoints):
-    #    tim = time.mktime(time.strptime(getValue('Time',trackP),timeFormat)) - startT
-    #    hr = getValue('Value',trackP)
-    #    alti = getValue('AltitudeMeters',trackP)
-    #    posLat = getValue('LatitudeDegrees',trackP)
-    #    posLon = getValue('LongitudeDegrees',trackP)
-    #    aG = 0
-    #    if(posLat > 10 and posLon > 10 and t.lat==0):
-    #        t.lat = posLat
-    #        t.lon = posLon
-    #        t.save()
-    #    w = WayPoint(training=t, lat=posLat,lon=posLon,time=tim,heartRate=hr, alt=alti, altGoogle=aG)
-    #    w.save()
     return fd
 
 
@@ -77,14 +61,15 @@ class DataCalc():
         pass
 
     def calcDa(self):
-        frame = store.get('/G13_05_23_14_07_03')
-        nF = pd.DataFrame(dict(diffT=dt, diffA=diff(frame.AltitudeMeters.values)), index=range(len(dt)))
-        dt = [ a.item() / 1e9 for a in diff(frame.index.values) ]
-        frame['Vario'] = pd.Series(diff(frame.AltitudeMeters.values) / dt * 60, index=frame.index[1:])
-        frame['Speed'] = pd.Series(diff(frame.DistanceMeters.values) / dt * 3.6, index=frame.index[1:])
-        frameD = frame.copy()
-        frameD.index = frameD.DistanceMeters
-        del frameD['DistanceMeters']
+        pass
+        #frame = store.get('/G13_05_23_14_07_03')
+        ##nF = pd.DataFrame(dict(diffT=dt, diffA=diff(frame.AltitudeMeters.values)), index=range(len(dt)))
+        #dt = [ a.item() / 1e9 for a in diff(frame.index.values) ]
+        #frame['Vario'] = pd.Series(diff(frame.AltitudeMeters.values) / dt * 60, index=frame.index[1:])
+        #frame['Speed'] = pd.Series(diff(frame.DistanceMeters.values) / dt * 3.6, index=frame.index[1:])
+        #frameD = frame.copy()
+        #frameD.index = frameD.DistanceMeters
+        #del frameD['DistanceMeters']
         
 
 class MyMplCanvas(FigureCanvas):
@@ -133,7 +118,6 @@ class MyMplCanvas(FigureCanvas):
         pass
 
     def plotDataFrame(self,frame):
-        labelRot = "vertical"
         frame = frame.resample('20s')
         self.dFrame = frame
         #self.hrAxes.plot(frame.HeartRate,'r',label='HeartRate')
@@ -146,6 +130,7 @@ class MyMplCanvas(FigureCanvas):
         #print x
         self.hrLinev = self.hrAxes.axvline(x=self.hrAxes.get_xbound()[0])#, visible=False)
 
+        #labelRot = "vertical"
         #self.hrAxes.set_xticklabels(self.hrAxes.get_xticks(),rotation=labelRot)
         #self.altAxes.set_xticklabels(self.altAxes.get_xticks(),rotation=labelRot)
         #self.cadAxes.set_xticklabels(self.cadAxes.get_xticks(),rotation=labelRot)
@@ -249,7 +234,7 @@ class MainWindow(QMainWindow):
             return
             a = Activity(fitFile)
             a.parse()
-            hrv = filter(lambda x: x.type.num==78, a.records)
+            #hrv = filter(lambda x: x.type.num==78, a.records)
             dat = filter(lambda x: x.type.num==20, a.records)
             dlatlo = [[float(u.fields[1].data)/(1<<31)*180,float(u.fields[2].data)/(1<<31)*180] for u in dat if u.fields[1].data]
             dat = filter(lambda x: x.type.num==20, a.records)
@@ -257,6 +242,7 @@ class MainWindow(QMainWindow):
             self.hr.append([[i,u.fields[6].data] for i,u in enumerate(dat) if u.fields[6].data])
             dat = filter(lambda x: x.type.num==20, a.records)
             alt = [[i,u.fields[4].data] for i,u in enumerate(dat) if u.fields[4].data]
+            hr = [[i,u.fields[4].data] for i,u in enumerate(dat) if u.fields[4].data]
             self.frame.evaluateJavaScript("setLine(%s)"%(dlatlo))
             #self.frame.evaluateJavaScript("showPlot([[[1,2],[2,3],[4,3]]])")
             self.frame.evaluateJavaScript('showPlot([{data: %s,label:"Heartrate"},{data:%s, label:"altitude", yaxis: 2}]);'%(hr,alt))
@@ -278,10 +264,10 @@ class MainWindow(QMainWindow):
                 print('already there')
             self.dFrame = self.hdStore.get(hdKey)
             #self.mplWidget.plotDataFrame(self.dFrame)
-            dlatlo = [[dat[0], dat[1]] for dat in self.dFrame.values if dat[0] != 0]
+            dlatlo = [[d[0], d[1]] for d in self.dFrame.values if d[0] != 0]
             self.frame.evaluateJavaScript('setLine(%s,"%s");'%(dlatlo,cols.pop()))
             self.dFrame['timeInt'] = self.dFrame.index.astype(int)/1000000 - self.dFrame.index.astype(int)[0]/1000000
-            self.hr.append([[dat[-1],dat[4]] for dat in self.dFrame.values])
+            self.hr.append([[d[-1],d[4]] for d in self.dFrame.values])
             print(self.hr[0][:10])
         strS = ', '.join(['{data: %s, label:"HR%d", color:"%s"}'%(hrI,i,colsH[-(i+1)]) for i,hrI in enumerate(self.hr)])
         ''' { xaxis: { mode: "time", timeformat: "%H:%M:%S" }, grid: { hoverable: true } }
