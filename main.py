@@ -152,6 +152,7 @@ class MainWindow(QMainWindow):
         self.ui.webView.load(QUrl("./main.html"))
         self.printer = ConsolePrinter(self)
         self.frame = self.ui.webView.page().mainFrame()
+        self.ui.webView.page().settings().setOfflineStoragePath("test.storage")
         self.ui.webView.loadFinished.connect(self.loadFin)
 
         #model
