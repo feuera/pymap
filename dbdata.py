@@ -2,6 +2,7 @@
 
 import pandas as pd
 from files import readFile
+from datetime import datetime
 
 def convertName(x):
     return 'G'+x.split('/')[-1][2:-4].replace('-','_')
@@ -32,6 +33,27 @@ class dbHandler():
 
     def getFrame(self, fname):
         return self.hdStore['/'+convertName(fname)]
-        
+
+    def getFrameByDate(self, date):
+        dateF = "%y_%m_%d_%H_%M_%S"
+        dStr = date.strftime("/G"+dateF)
+        return self.hdStore[dStr]
+
+    def getStoreList(self):
+        dateF = "%y_%m_%d_%H_%M_%S"
+        tList = [datetime.strptime(key[2:], dateF) for key in self.hdKeys]
+        return tList
+
+    def getYearList(self):
+        tList = self.getStoreList()
+        return list(set(t.year for t in tList))
+
+    def getMonths(self, year):
+        tList = self.getStoreList()
+        return list(set(t.month for t in tList if t.year==year))
+
+    def getTrainings(self, year, month):
+        tList = self.getStoreList()
+        return (x for x in tList if x.month==month and x.year==year)
 
 

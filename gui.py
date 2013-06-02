@@ -1,15 +1,16 @@
 #!/usr/bin/env python2
 
 
-from PyQt4.QtCore import QObject,pyqtSlot,QUrl,QDir
+from PyQt4.QtCore import QObject, pyqtSlot, QUrl, QDir, QDateTime
 #from PyQt4.QtCore import pyqtSignal
-from PyQt4.QtGui import QMainWindow,QFileSystemModel,QAbstractItemView
+from PyQt4.QtGui import QMainWindow, QFileSystemModel, QAbstractItemView, QStandardItemModel, QStandardItem
 #from PyQt4.QtGui import QSizePolicy, QColor
 from fitparse import Activity
 from PyQt4 import uic
 #from files import getValue, handle_tcxFile, timeFormat
 
 from dbdata import dbHandler
+from calendar import month_abbr
 
 
 
@@ -53,7 +54,32 @@ class MainWindow(QMainWindow):
         #print self.ui.mdiArea.subWindowList(), self.ui.subwindowMap
 
         self.ui.treeView.setRootIndex(self.fileModel.index(QDir.currentPath()))
-        self.ui.treeView.clicked.connect(self.fileSelected)
+        self.ui.treeView.clicked.connect(self.onTreeViewFileSelected)
+        self.ui.dbTreeView.clicked.connect(self.onTreeViewDateSelected)
+
+        self.initTree()
+
+    def initTree(self):
+        self.itemModel = QStandardItemModel()
+        #self.itemModel.
+        root = self.itemModel.invisibleRootItem()
+        root.setEditable(False)
+        for year in self.dbHandle.getYearList():
+            rItem = QStandardItem("{}".format(year))
+            rItem.setEditable(False)
+            root.appendRow(rItem)
+            for month in self.dbHandle.getMonths(year):
+                monthEntry = QStandardItem("{}".format(month_abbr[month]))
+                rItem.appendRow(monthEntry)
+                monthEntry.setEditable(False)
+                for ex in self.dbHandle.getTrainings(year,month):
+                    it = QStandardItem("{}".format(ex))
+                    it.setEditable(False)
+                    it.setData(QDateTime(ex))
+                    monthEntry.appendRow(it)
+
+        self.ui.dbTreeView.setModel(self.itemModel)
+        self.ui.dbTreeView.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
         #FIXME move away
         self.hr = []
@@ -81,58 +107,72 @@ class MainWindow(QMainWindow):
         self.onMouseOver(lat,long)
 
 
-    def fileSelected(self,index):
+    def onTreeViewFileSelected(self,index):
         fitFile = self.fileModel.filePath(index)
         #print('click',index.data(),self.fileModel.filePath(index),type(self.fileModel.type(index)))
         fitfiles = (self.fileModel.filePath(x) 
                 for x in self.ui.treeView.selectedIndexes() 
                 if x.column() == 0)
 
-        if self.fileModel.type(index) == "fit File":
-            return
-            a = Activity(fitFile)
-            a.parse()
-            #hrv = filter(lambda x: x.type.num==78, a.records)
-            dat = filter(lambda x: x.type.num==20, a.records)
-            dlatlo = [[float(u.fields[1].data)/(1<<31)*180,float(u.fields[2].data)/ \
-                (1<<31)*180] for u in dat if u.fields[1].data]
-            dat = filter(lambda x: x.type.num==20, a.records)
-            #timestamp = [u.fields[0].data for u in dat if u.fields[0].data]
-            self.hr.append([[i,u.fields[6].data] for i,u in enumerate(dat) if u.fields[6].data])
-            dat = filter(lambda x: x.type.num==20, a.records)
-            alt = [[i,u.fields[4].data] for i,u in enumerate(dat) if u.fields[4].data]
-            hr = [[i,u.fields[4].data] for i,u in enumerate(dat) if u.fields[4].data]
-            self.frame.evaluateJavaScript("setLine(%s)"%(dlatlo))
-            #self.frame.evaluateJavaScript("showPlot([[[1,2],[2,3],[4,3]]])")
-            self.frame.evaluateJavaScript('showPlot([{data: %s,label:"Heartrate"},{data:%s, \
-                    label:"altitude", yaxis: 2}]);'%(hr,alt))
-            print('finish')
-        #if self.fileModel.type(index) == "tcx File":
-        self.hr = []
-        self.frame.evaluateJavaScript('clearMap();')
-        cols = ['darkred','green','red','green','black','yellow','blue','red']
-        colsH = ['darkred','green','red','green','black','yellow','blue','red']
-        #cols = [str(x) for x in QColor.colorNames()]
+        #if self.fileModel.type(index) == "fit File":
+            #return
+            #a = Activity(fitFile)
+            #a.parse()
+            ##hrv = filter(lambda x: x.type.num==78, a.records)
+            #dat = filter(lambda x: x.type.num==20, a.records)
+            #dlatlo = [[float(u.fields[1].data)/(1<<31)*180,float(u.fields[2].data)/ \
+                #(1<<31)*180] for u in dat if u.fields[1].data]
+            #dat = filter(lambda x: x.type.num==20, a.records)
+            ##timestamp = [u.fields[0].data for u in dat if u.fields[0].data]
+            #self.hr.append([[i,u.fields[6].data] for i,u in enumerate(dat) if u.fields[6].data])
+            #dat = filter(lambda x: x.type.num==20, a.records)
+            #alt = [[i,u.fields[4].data] for i,u in enumerate(dat) if u.fields[4].data]
+            #hr = [[i,u.fields[4].data] for i,u in enumerate(dat) if u.fields[4].data]
+            #self.frame.evaluateJavaScript("setLine(%s)"%(dlatlo))
+            ##self.frame.evaluateJavaScript("showPlot([[[1,2],[2,3],[4,3]]])")
+            #self.frame.evaluateJavaScript('showPlot([{data: %s,label:"Heartrate"},{data:%s, \
+                    #label:"altitude", yaxis: 2}]);'%(hr,alt))
+            #print('finish')
+        ##if self.fileModel.type(index) == "tcx File":
+
+        frames = []
         for fitFile in fitfiles:
             fitFile = str(fitFile)
-            print(fitFile)
             if not self.dbHandle.hasFile(fitFile):
                 self.dbHandle.newData(fitFile)
-            else:
-                print('already there')
-            self.dFrame = self.dbHandle.getFrame(fitFile)
-            #self.mplWidget.plotDataFrame(self.dFrame)
-            dlatlo = [[d[0], d[1]] for d in self.dFrame.values if d[0] != 0]
-            self.frame.evaluateJavaScript('setLine(%s,"%s");'%(dlatlo,cols.pop()))
-            self.dFrame['timeInt'] = self.dFrame.index.astype(int)/1000000 - \
-                    self.dFrame.index.astype(int)[0]/1000000
-            self.hr.append([[d[-1],d[4]] for d in self.dFrame.values])
-            print(self.hr[0][:10])
-        strS = ', '.join(['{data: %s, label:"HR%d", color:"%s"}'\
-                %(hrI,i,colsH[-(i+1)]) for i,hrI in enumerate(self.hr)])
+            #else:
+                #print('already there')
+            frames.append(self.dbHandle.getFrame(fitFile))
         ''' { xaxis: { mode: "time", timeformat: "%H:%M:%S" }, grid: { hoverable: true } }
         '''
-        self.frame.evaluateJavaScript('showPlot([%s]);'%(strS))
+        self.plotDataFrame(frames)
         #self.frame.evaluateJavaScript('showPlot([{data: %s,label:"Heartrate"},{data:%s, label:"altitude", yaxis: 2}]);'%(hr,alt))
+
+    def onTreeViewDateSelected(self,index):
+        self.frame.evaluateJavaScript('clearMap();')
+        frames = []
+        for index in self.ui.dbTreeView.selectedIndexes():
+            data = self.itemModel.itemFromIndex(index).data().toDateTime().toPyDateTime()
+            dFrame = self.dbHandle.getFrameByDate(data)
+            frames.append(dFrame)
+        self.plotDataFrame(frames)
+
+
+    def plotDataFrame(self, dFrames):
+        self.hr = []
+        cols = ['darkred','green','red','green','black','yellow','blue','red']
+        colsH = ['darkred','green','red','green','black','yellow','blue','red']
+        for dframe in dFrames:
+            dlatlo = [[d[0], d[1]] for d in dframe.values if d[0] != 0]
+            self.frame.evaluateJavaScript('setLine(%s,"%s");'%(dlatlo,cols.pop()))
+            dframe['timeInt'] = dframe.index.astype(int)/1000000 - \
+                    dframe.index.astype(int)[0]/1000000
+            self.hr.append([[d[-1],d[4]] for d in dframe.values])
+            #print(self.hr[0][:10])
+        self.dFrame = dframe
+        strS = ', '.join(['{data: %s, label:"HR%d", color:"%s"}'\
+                %(hrI,i,colsH[-(i+1)]) for i,hrI in enumerate(self.hr)])
+        self.frame.evaluateJavaScript('showPlot([%s]);'%(strS))
+
 
 
