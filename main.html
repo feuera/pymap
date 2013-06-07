@@ -18,11 +18,13 @@
         <div class="demo-container" style="width:800px; height:600px; float:left;">
             <div id="map" class="demo-placeholder" float="left"></div>
 		</div>
-        <div class="demo-container" style="width:600px; height:320px; float:left;">
-            <div id="plot" class="demo-placeholder"></div>
-		</div>
+        <!--<div class="demo-container" style="width:600px; height:320px; float:left;">-->
+            <!--<div id="plot1" class="demo-placeholder"></div>-->
+		<!--</div>-->
+        <!--<div class="demo-container" style="width:600px; height:320px; float:left;">-->
+            <!--<div id="plot2" class="demo-placeholder"></div>-->
+		<!--</div>-->
 		<script>
-            var plotDiv = $("#plot");
             var map = L.map('map').setView([47.15, 15.37],10);
             L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -39,6 +41,13 @@
             $(function() {
                 marker = L.marker(polyline.getBounds().getNorthEast()).addTo(map);
                 // add an OpenStreetMap tile layer
+                $("#map").resize(function(){
+                    map.invalidateSize(true);
+                    printer.text("map resize"+ map.getSize());
+                });
+                printer.text("win size: "+window.size);
+            });
+            function bindFunctions(plotDiv) {
                 plotDiv.bind("plothover", function (event, pos, item) {
                     gui.onGraphHover(pos.x);
                     // axis coordinates for other axes, if present, are in pos.x2, pos.x3, ...
@@ -59,23 +68,18 @@
                     axes.yaxis.zoom();
                     //printer.text("a " + axes.xaxes);
                 });
+                plotDiv.resize(function () {
+                    printer.text("Placeholder is now "
+                        + $(this).width() + "x" + $(this).height()
+                        + " pixels");
+                });
                 $(".demo-container").resizable({
                     maxWidth: 1800,
                     maxHeight: 800,
                     minWidth: 450,
                     minHeight: 250,
                 });
-                plotDiv.resize(function () {
-                    printer.text("Placeholder is now "
-                        + $(this).width() + "x" + $(this).height()
-                        + " pixels");
-                });
-                $("#map").resize(function(){
-                    map.invalidateSize(true);
-                    printer.text("map resize"+ map.getSize());
-                });
-                printer.text("win size: "+window.size);
-            });
+            }
 
 			function setLine(polD,col) {
                 var p = L.polyline(polD,{color:col});//.addTo(map);
@@ -86,8 +90,10 @@
             function moveMarker(ltlg) {
                 marker.setLatLng(ltlg);
             }
-			function showPlot(data) {
+			function showPlot(data, divName) {
                 //printer.text("data");
+                $('body').append('<div class="demo-container" style="width:600px; height:320px; float:left;">\n<div id="'+ divName + '" class="demo-placeholder"></div>\n</div>');
+                var plotDiv = $("#"+divName);
                 $.plot(plotDiv, data ,{
                     xaxis: { mode: "time", timeformat: "%H:%M:%S", zoomRange: [1], }, 
                     yaxis: { zoomRange: false },
@@ -97,6 +103,8 @@
                     pan: { interactive: true },
                     } 
                 );
+                bindFunctions(plotDiv);
+
             }
 
             function clearMap() {

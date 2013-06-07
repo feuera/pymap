@@ -5,7 +5,7 @@ from PyQt4.QtCore import QObject, pyqtSlot, QUrl, QDir, QDateTime
 #from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtGui import QMainWindow, QFileSystemModel, QAbstractItemView, QStandardItemModel, QStandardItem
 #from PyQt4.QtGui import QSizePolicy, QColor
-from fitparse import Activity
+#from fitparse import Activity
 from PyQt4 import uic
 #from files import getValue, handle_tcxFile, timeFormat
 
@@ -160,6 +160,8 @@ class MainWindow(QMainWindow):
 
     def plotDataFrame(self, dFrames):
         self.hr = []
+        self.alt = []
+        self.cad = []
         cols = ['darkred','green','red','green','black','yellow','blue','red']
         colsH = ['darkred','green','red','green','black','yellow','blue','red']
         for dframe in dFrames:
@@ -168,11 +170,19 @@ class MainWindow(QMainWindow):
             dframe['timeInt'] = dframe.index.astype(int)/1000000 - \
                     dframe.index.astype(int)[0]/1000000
             self.hr.append([[d[-1],d[4]] for d in dframe.values])
+            self.alt.append([[d[-1],d[2]] for d in dframe.values])
+            self.cad.append([[d[-1],d[5]] for d in dframe.values])
             #print(self.hr[0][:10])
         self.dFrame = dframe
         strS = ', '.join(['{data: %s, label:"HR%d", color:"%s"}'\
                 %(hrI,i,colsH[-(i+1)]) for i,hrI in enumerate(self.hr)])
-        self.frame.evaluateJavaScript('showPlot([%s]);'%(strS))
+        self.frame.evaluateJavaScript('showPlot([%s],"plot1");'%(strS))
+        strS = ', '.join(['{data: %s, label:"Altitude%d", color:"%s"}'\
+                %(hrI,i,colsH[-(i+2)]) for i,hrI in enumerate(self.alt)])
+        self.frame.evaluateJavaScript('showPlot([%s],"plot2");'%(strS))
+        strS = ', '.join(['{data: %s, label:"Cadence%d", color:"%s"}'\
+                %(hrI,i,colsH[-(i+3)]) for i,hrI in enumerate(self.cad)])
+        self.frame.evaluateJavaScript('showPlot([%s],"plot3");'%(strS))
 
 
 
