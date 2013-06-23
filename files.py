@@ -29,7 +29,7 @@ def handle_tcxFile(f):
 
 
 
-def readFile(self,fname):
+def readFile(fname):
     names = ['Time','LatitudeDegrees','LongitudeDegrees','AltitudeMeters',
             'DistanceMeters','Value','Cadence','SensorState']
     convertF = [lambda x: datetime.strptime(x,timeFormat), float, float, float,

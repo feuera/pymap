@@ -10,7 +10,7 @@ def convertName(x):
 
 class dbHandler():
     def __init__(self):
-        self.hdStore = pd.HDFStore("/home/andi/workspace/garmin/History/all.h5")
+        self.hdStore = pd.HDFStore("/home/andi/workspace/garmin/History/allN.h5")
         self.hdKeys = self.hdStore.keys()
 
     def newData(self, fname):
@@ -37,6 +37,7 @@ class dbHandler():
     def getFrameByDate(self, date):
         dateF = "%y_%m_%d_%H_%M_%S"
         dStr = date.strftime("/G"+dateF)
+        print("getFrByDate",dStr)
         return self.hdStore[dStr]
 
     def getStoreList(self):

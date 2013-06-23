@@ -4,6 +4,7 @@
 from PyQt4.QtCore import QObject, pyqtSlot, QUrl, QDir, QDateTime
 #from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtGui import QMainWindow, QFileSystemModel, QAbstractItemView, QStandardItemModel, QStandardItem
+from PyQt4.QtWebKit import QWebSettings
 #from PyQt4.QtGui import QSizePolicy, QColor
 #from fitparse import Activity
 from PyQt4 import uic
@@ -36,6 +37,7 @@ class MainWindow(QMainWindow):
         self.printer = ConsolePrinter(self)
         self.frame = self.ui.webView.page().mainFrame()
         self.ui.webView.page().settings().setOfflineStoragePath("test.storage")
+        self.ui.webView.page().settings().setAttribute(QWebSettings.DeveloperExtrasEnabled, True)
         self.ui.webView.loadFinished.connect(self.loadFin)
 
         #model
@@ -152,7 +154,12 @@ class MainWindow(QMainWindow):
         self.frame.evaluateJavaScript('clearMap();')
         frames = []
         for index in self.ui.dbTreeView.selectedIndexes():
-            data = self.itemModel.itemFromIndex(index).data().toDateTime().toPyDateTime()
+            d = self.itemModel.itemFromIndex(index).data()
+            try:
+                data = d.toDateTime().toPyDateTime()
+            except:
+                data = d.toPyDateTime()
+            print(data)
             dFrame = self.dbHandle.getFrameByDate(data)
             frames.append(dFrame)
         self.plotDataFrame(frames)
