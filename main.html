@@ -5,14 +5,15 @@
         <link href="examples.css" rel="stylesheet" type="text/css">
         <link href="flot/jquery-ui.min.css" rel="stylesheet" type="text/css">
 		<link rel="stylesheet" href="dist/leaflet.css" />
-		<script src="dist/leaflet.js"></script>
-		<script language="javascript" type="text/javascript" src="flot/jquery.min.js"></script>
-        <script language="javascript" type="text/javascript" src="flot/jquery-ui.min.js"></script>
-		<script language="javascript" type="text/javascript" src="flot/jquery.flot.min.js"></script>
-        <script language="javascript" type="text/javascript" src="flot/jquery.flot.time.min.js"></script>
-        <script language="javascript" type="text/javascript" src="flot/jquery.flot.resize.min.js"></script>
-        <script language="javascript" type="text/javascript" src="flot/jquery.flot.navigate.min.js"></script>
-        <script language="javascript" type="text/javascript" src="flot/jquery.flot.crosshair.min.js"></script>
+        <script src="head.min.js"></script>
+		<!--<script src="dist/leaflet.js"></script>-->
+		<!--<script language="javascript" type="text/javascript" src="flot/jquery.min.js"></script>-->
+        <!--<script language="javascript" type="text/javascript" src="flot/jquery-ui.min.js"></script>-->
+		<!--<script language="javascript" type="text/javascript" src="flot/jquery.flot.min.js"></script>-->
+        <!--<script language="javascript" type="text/javascript" src="flot/jquery.flot.time.min.js"></script>-->
+        <!--<script language="javascript" type="text/javascript" src="flot/jquery.flot.resize.min.js"></script>-->
+        <!--<script language="javascript" type="text/javascript" src="flot/jquery.flot.navigate.min.js"></script>-->
+        <!--<script language="javascript" type="text/javascript" src="flot/jquery.flot.crosshair.min.js"></script>-->
 	</head>
 	<body>
         <div class="demo-container" style="width:800px; height:600px; float:left;">
@@ -25,20 +26,34 @@
             <!--<div id="plot2" class="demo-placeholder"></div>-->
 		<!--</div>-->
 		<script>
-            var map = L.map('map').setView([47.15, 15.37],10);
-            L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-            var lG = L.layerGroup().addTo(map);
-            var polyline = L.polyline([
+            var map;
+            var lG;
+            var polyline;
+            var marker = 0 
+
+            head.js("dist/leaflet.js");
+            head.js("flot/jquery.min.js");
+            head.js("flot/jquery-ui.min.js");
+            head.js("flot/jquery.flot.min.js");
+            head.js("flot/jquery.flot.time.min.js");
+            head.js("flot/jquery.flot.resize.min.js");
+            head.js("flot/jquery.flot.navigate.min.js");
+            head.js("flot/jquery.flot.crosshair.min.js");
+
+            //$(function() {
+            head.ready(function() {
+                map = L.map('map').setView([47.15, 15.37],10);
+                L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                lG = L.layerGroup().addTo(map);
+                polyline = L.polyline([
                 [47.15, 15.17],
                 [47.26,15.30]
                 ], {color:'red'}).addTo(map);
-            var marker = 0 
-            map.fitBounds(polyline.getBounds());
-            lG.addLayer(polyline);
 
-            $(function() {
+                map.fitBounds(polyline.getBounds());
+                lG.addLayer(polyline);
                 marker = L.marker(polyline.getBounds().getNorthEast()).addTo(map);
                 // add an OpenStreetMap tile layer
                 $("#map").resize(function(){
@@ -90,10 +105,15 @@
             function moveMarker(ltlg) {
                 marker.setLatLng(ltlg);
             }
+            //var divList=[];
 			function showPlot(data, divName) {
                 //printer.text("data");
-                $('body').append('<div class="demo-container" style="width:600px; height:320px; float:left;">\n<div id="'+ divName + '" class="demo-placeholder"></div>\n</div>');
                 var plotDiv = $("#"+divName);
+                //printer.text("plotD:"+plotDiv.length +"\n");
+                if (plotDiv.length == 0) {
+                    $('body').append('<div class="demo-container" style="width:600px; height:320px; float:left;">\n<div id="'+ divName + '" class="demo-placeholder"></div>\n</div>');
+                    plotDiv = $("#"+divName);
+                }
                 $.plot(plotDiv, data ,{
                     xaxis: { mode: "time", timeformat: "%H:%M:%S", zoomRange: [1], }, 
                     yaxis: { zoomRange: false },
