@@ -842,6 +842,9 @@ MessageType(20, 'record', {
     11: Field('time_from_course', FieldTypeBase(5), 's', 1000, None),  # base type: sint32
     12: Field('cycle_length', FieldTypeBase(2), 'm', 100, None),  # base type: uint8
     13: Field('temperature', FieldTypeBase(1), 'C', None, None),  # base type: sint8
+    39: Field('vertical_oscillation', FieldTypeBase(4), 'mm', 100, None),  # base type: uint16
+    40: Field('stance_time_percent', FieldTypeBase(4), 'percent', 100, None),  # base type: uint16
+    41: Field('stance_time', FieldTypeBase(4), 'ms', 10, None),  # base type: uint16
     253: Field('timestamp', FieldType('date_time'), 's', None, None),  # base type: uint32
 })
 
