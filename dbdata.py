@@ -29,6 +29,7 @@ class dbHandler():
         data = [{f.name: calcFun(f.name,f.data) for f in x.fields} for x in dat]
         dFrame = pd.DataFrame(data)
         dFrame.index = dFrame.timestamp
+        del dFrame['timestamp']
         #dateF = "%y_%m_%d_%H_%M_%S"
         #dStr = "/G"+datetime.now().strftime(dateF)
         dStr = "/"+convertName(fname)
@@ -55,10 +56,17 @@ class dbHandler():
 
     def hasFile(self, fname):
         hdKey = '/'+convertName(fname)
-        return hdKey in self.hdKeys
+        if len(hdKey) > 10:
+            return hdKey in self.hdKeys
+        else:
+            return fname in self.hdKeys
 
     def getFrame(self, fname):
-        return self.hdStore['/'+convertName(fname)]
+        return self.hdStore[fname]
+
+    def getFrameOfFile(self, fname):
+        fname = convertName(fname)
+        return self.hdStore[fname]
 
     def getFrameByDate(self, date):
         dateF = "%y_%m_%d_%H_%M_%S"
@@ -68,9 +76,10 @@ class dbHandler():
 
     def getStoreList(self):
         if not self.tList:
-            dateF = "%y_%m_%d_%H_%M_%S"
-            self.tList = [datetime.strptime(key[2:], dateF) for key in self.hdKeys]
-            return self.tList
+            #dateF = "%y_%m_%d_%H_%M_%S"
+            #self.tList = [datetime.strptime(key[2:], dateF) for key in self.hdKeys]
+            #return self.tList
+            return self.hdKeys
         else:
             return self.tList
 
