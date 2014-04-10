@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
                     self.dbHandle.newData(fitFile)
                 #else:
                     #print('already there')
-                frames.append(self.dbHandle.getFrame(fitFile))
+                frames.append(self.dbHandle.getFrameOfFile(fitFile))
             ''' { xaxis: { mode: "time", timeformat: "%H:%M:%S" }, grid: { hoverable: true } }
             '''
             #self.frame.evaluateJavaScript('showPlot([{data: %s,label:"Heartrate"},{data:%s, label:"altitude", yaxis: 2}]);'%(hr,alt))
