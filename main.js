@@ -89,7 +89,7 @@ function moveMarker(ltlg) {
 function showPlot(data, divName) {
     //printer.text("data");
     var plotDiv = $("#"+divName);
-    //printer.text("plotD:"+plotDiv.length +"\n");
+    printer.text("plotD:"+data.length +"\n");
     if (plotDiv.length == 0) {
         $('body').append('<div class="demo-container" style="width:100%; height:200px; float:left;">\n<div id="'+ divName + '" class="demo-placeholder"></div>\n</div>');
         plotDiv = $("#"+divName);
