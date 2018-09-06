@@ -7,12 +7,12 @@ from fitparse import Activity
 
 
 def convertName(x):
-    return 'G'+x.split('/')[-1][2:-4].replace('-', '_')
+    return 'G'+x.split('/')[-1][:-4].replace('-', '_')
 
 
 class dbHandler():
     def __init__(self):
-        self.hdStore = pd.HDFStore("ce/garmin/History/allN.h5")
+        self.hdStore = pd.HDFStore("./allN.h5")
         self.hdKeys = self.hdStore.keys()
         self.tList = []
 
@@ -74,14 +74,14 @@ class dbHandler():
         return self.hdStore[fname]
 
     def getFrameByDate(self, date):
-        dateF = "%y_%m_%d_%H_%M_%S"
+        dateF = "%Y_%m_%d_%H_%M_%S"
         dStr = date.strftime("/G"+dateF)
         return self.hdStore[dStr]
 
     def getStoreList(self):
         if not self.tList:
             try:
-                dateF = "%y_%m_%d_%H_%M_%S"
+                dateF = "%Y_%m_%d_%H_%M_%S"
                 self.tList = [datetime.strptime(key[2:], dateF)
                               for key in self.hdKeys]
                 print(self.tList)
@@ -93,7 +93,7 @@ class dbHandler():
 
     def getYearList(self):
         tList = self.getStoreList()
-        return list(set(t.year for t in tList if not isinstance(t, basestring)))
+        return list(set(t.year for t in tList if not isinstance(t, str)))
 
     def getMonths(self, year):
         tList = self.getStoreList()

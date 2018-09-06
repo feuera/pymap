@@ -1,11 +1,11 @@
 #!/usr/bin/env python2
 
-from PyQt4.QtCore import QObject, pyqtSlot, QUrl, QDir, QDateTime
-from PyQt4.QtGui import QMainWindow, QFileSystemModel, QAbstractItemView
-from PyQt4.QtGui import QStandardItemModel, QStandardItem
-from PyQt4.QtWebKit import QWebSettings
+from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QDir, QDateTime
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtWebKit import QWebSettings
+from PyQt5.QtWidgets import QMainWindow, QFileSystemModel, QAbstractItemView
 # from fitparse import Activity
-from PyQt4 import uic
+from PyQt5 import uic
 # from files import getValue, handle_tcxFile, timeFormat
 
 from dbdata import dbHandler
@@ -24,18 +24,18 @@ class ConsolePrinter(QObject):
         #  "setLine([[47.15, 15.37],[47.26,15.30],[47.16,15.30]]);")
         print(message)
 
-
 class MainWindow(QMainWindow):
     def __init__(self):
         self.dbHandle = dbHandler()
         QMainWindow.__init__(self)
         self.ui = uic.loadUi("main.ui")
-        self.ui.webView.load(QUrl("./main.html"))
+        # self.ui.webView.load(QUrl("./main.html"))
         self.printer = ConsolePrinter(self)
         self.frame = self.ui.webView.page().mainFrame()
         pSettings = self.ui.webView.page().settings()
         pSettings.setOfflineStoragePath("test.storage")
         pSettings.setAttribute(QWebSettings.DeveloperExtrasEnabled, True)
+        self.ui.webView.show()
         self.ui.webView.loadFinished.connect(self.loadFin)
 
         # model
@@ -101,17 +101,21 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(str)
     def onGraphHover(self, strTSt):
-        timestmp = float(str(strTSt))
-        st = self.dFrame.index.astype(int)[0]
-        i = self.dFrame.index.astype(int).searchsorted(st + timestmp*1000000.)
-        (lat, lng) = (0, 0)
-        if 'altitude' in self.dFrame:
-            (lat, lng) = (self.dFrame['position_lat'][i],
-                          self.dFrame['position_long'][i])
-        else:
-            (lat, lng) = self.dFrame.values[i][:2]
-        if lat:
-            self.onMouseOver(lat, lng)
+        try:
+            timestmp = float(str(strTSt))
+            st = self.dFrame.index.astype(int)[0]
+            i = self.dFrame.index.astype(int).searchsorted(st + timestmp*1000000.)
+            (lat, lng) = (0, 0)
+            if 'altitude' in self.dFrame:
+                (lat, lng) = (self.dFrame['position_lat'][i],
+                              self.dFrame['position_long'][i])
+            else:
+                # if i < len(self.dFrame):
+                (lat, lng) = self.dFrame.values[i][:2]
+            if lat:
+                self.onMouseOver(lat, lng)
+        except:
+            pass
 
     def onTreeViewFileSelected(self, index):
         self.frame.evaluateJavaScript('clearMap();')
@@ -155,11 +159,15 @@ class MainWindow(QMainWindow):
             da = self.itemModel.itemFromIndex(index)
             d = da.text()
             print('click:', da.text(), type(da.data()))
-            dFrame = self.dbHandle.getFrame(d)
-            ds = int(len(dFrame)/300)
-            dfS = dFrame[::ds]
-            frames.append(dfS)
-        self.plotDataFrame(frames)
+            try:
+                dFrame = self.dbHandle.getFrameByDate(da.data().toPyDateTime())
+                ds = int(len(dFrame)/300)
+                dfS = dFrame[::ds]
+                frames.append(dfS)
+            except:
+                pass
+        if len(frames):
+            self.plotDataFrame(frames)
 
     def getD(self, name, iterObj):
         return [[d[1]['timeInt'], d[1][name]] for d in iterObj

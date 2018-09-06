@@ -41,7 +41,7 @@
          <widget class="QWebView" name="webView">
           <property name="url">
            <url>
-            <string>about:blank</string>
+            <string>file:///home/andi_sp/spone/pymap/main.html</string>
            </url>
           </property>
          </widget>
@@ -70,7 +70,7 @@
      <x>0</x>
      <y>0</y>
      <width>1027</width>
-     <height>23</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
@@ -97,8 +97,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>159</width>
-          <height>658</height>
+          <width>98</width>
+          <height>91</height>
          </rect>
         </property>
         <attribute name="label">
@@ -115,8 +115,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>159</width>
-          <height>658</height>
+          <width>272</width>
+          <height>643</height>
          </rect>
         </property>
         <attribute name="label">
